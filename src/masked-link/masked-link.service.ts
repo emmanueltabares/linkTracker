@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, NotFoundException } from "@nestjs/common";
 import { CreateLinkDto } from "./DTOs/create-link.dto";
 import { Link } from "./interfaces/link.interface";
 
@@ -20,10 +20,11 @@ export class MaskedLinkService {
             return "The link already exists";
         }
 
-        // Mask the link
-        const maskedUrl = this.maskUrl(url);
+        const randomId = this.generateRandomId();
+        const maskedUrl = this.maskUrl(randomId);
 
         const maskedLinkData: Link = {
+            id: randomId,
             target: url,
             link: maskedUrl,
             password,
@@ -39,19 +40,33 @@ export class MaskedLinkService {
         return maskedLinkData;
     }
 
-    invalidateLink() {
+    invalidateLink(urlId: string) {
+        const link = this.findLink(urlId)
+
+        if(!link)
+            throw new NotFoundException("The link provide not exists");
+
+        if(!link.valid)
+            return "The link already invalidated"
+
+        link.valid = false;
+        link.expirationDate = undefined;
+
         return "The link has been invalidated"
     }
 
-    findLink(url: string): Link {
-        return links.find(({ target }) => target === url)
+    findLink(urlId: string): Link {
+        return links.find(({ id }) => id === urlId)
     }
 
-    maskUrl(url: string): string {
-        const maskedUrl = nanoid(6);
+    generateRandomId(): string {
+        return nanoid(6);
+    }
+
+    maskUrl(urlId: string): string {
         const maskedHost = "localhost"; // sacar de process.env
         const maskedPort = 3000; // Sacar de process.env;
         
-        return `http://${maskedHost}:${maskedPort}/l/${maskedUrl}`
+        return `http://${maskedHost}:${maskedPort}/l/${urlId}`
     }
 }
