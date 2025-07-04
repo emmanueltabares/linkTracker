@@ -32,9 +32,12 @@ export class MaskedLinkController {
     }
 
     @Put(':id')
-    invalidateLink(@Param('id') urlId: string): ApiResponse {
+    invalidateLink(
+        @Param('id') urlId: string,
+        @Query('password') password: string
+    ): ApiResponse {
         try {
-            const invalidateLink = this.maskedLinkService.invalidateLink(urlId);
+            const invalidateLink = this.maskedLinkService.invalidateLink(urlId, password);
             return {
                 success: true,
                 message: "The link has been invalidate",

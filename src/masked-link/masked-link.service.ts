@@ -33,10 +33,8 @@ export class MaskedLinkService {
             valid: true
         }
         
-        // Add the link to de links list
         links.push(maskedLinkData);
-
-        // Return mask link
+        
         return {
             target: url,
             link: maskedUrl,
@@ -46,10 +44,11 @@ export class MaskedLinkService {
         }
     }
 
-    invalidateLink(urlId: string) {
+    invalidateLink(urlId: string, password: string) {
         const link = this.getLink(urlId);
 
         this.checkIsValidLink(link);
+        this.validateAccess(link, password);
 
         link.valid = false;
         link.expirationDate = undefined;
@@ -94,7 +93,7 @@ export class MaskedLinkService {
 
     checkIsValidLink(link: Link) {
         if(!link.valid)
-            throw new NotFoundException("The link does not valid");
+            throw new NotFoundException("The link is invalid");
     }
 
     registerRedirect(urlId: string) {
