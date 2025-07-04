@@ -1,6 +1,7 @@
-import { Body, Controller, Param, Post, Put } from "@nestjs/common";
+import { Body, Controller, Get, Param, Post, Put, Query, Res } from "@nestjs/common";
 import { MaskedLinkService } from "./masked-link.service";
 import { CreateLinkDto } from "./DTOs/create-link.dto";
+import { Response } from 'express';
 
 @Controller('l')
 export class MaskedLinkController {
@@ -15,5 +16,18 @@ export class MaskedLinkController {
     @Put(':id')
     invalidateLink(@Param('id') urlId: string) {
         return this.maskedLinkService.invalidateLink(urlId);
+    }
+
+    @Get(':id')
+    redirect(
+        @Param('id') urlId: string,
+        @Query('password') password: string,
+        @Res() res: Response
+    ) {
+        const link = this.maskedLinkService.getLinkByUrlId(urlId);
+
+        this.maskedLinkService.validateAccess(link, password);
+
+        return res.redirect(link.target);
     }
 }

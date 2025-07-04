@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Injectable } from "@nestjs/common";
 import { CreateLinkDto } from "./DTOs/create-link.dto";
 import { Link } from "./interfaces/link.interface";
 
@@ -9,16 +9,13 @@ const links: Link[] = [];
 @Injectable()
 export class MaskedLinkService {
 
-    createLink(createLinkDto: CreateLinkDto) {
+    createLink(createLinkDto: CreateLinkDto): any {
         
         const { url, password, expirationDate } = createLinkDto;
-
-        // Check if the link already exists
-        const link = this.findLink(url);
         
-        if (link) {
-            return "The link already exists";
-        }
+        const urlExistence = this.getLinkByUrl(url);
+        if(urlExistence)
+            return "URL already exists"
 
         const randomId = this.generateRandomId();
         const maskedUrl = this.maskUrl(randomId);
@@ -37,17 +34,17 @@ export class MaskedLinkService {
         links.push(maskedLinkData);
 
         // Return mask link
-        return maskedLinkData;
+        return {
+            target: url,
+            link: maskedUrl,
+            password,
+            expirationDate,
+            valid: maskedLinkData.valid,
+        }
     }
 
     invalidateLink(urlId: string) {
-        const link = this.findLink(urlId)
-
-        if(!link)
-            throw new NotFoundException("The link provide not exists");
-
-        if(!link.valid)
-            return "The link already invalidated"
+        const link = this.getLinkByUrlId(urlId)
 
         link.valid = false;
         link.expirationDate = undefined;
@@ -55,8 +52,16 @@ export class MaskedLinkService {
         return "The link has been invalidated"
     }
 
-    findLink(urlId: string): Link {
-        return links.find(({ id }) => id === urlId)
+    getLinkByUrlId(urlId: string): Link {
+        const link = links.find(({ id }) => id === urlId)
+        if(!link?.valid)
+            throw new BadRequestException("The link not exist or not valid")
+
+        return link;
+    }
+
+    getLinkByUrl(url: string) {
+        return links.find(({ target }) => target === url)
     }
 
     generateRandomId(): string {
@@ -68,5 +73,15 @@ export class MaskedLinkService {
         const maskedPort = 3000; // Sacar de process.env;
         
         return `http://${maskedHost}:${maskedPort}/l/${urlId}`
+    }
+
+    validateAccess(link: Link, password?: string) {
+        const foundLink = this.getLinkByUrlId(link.id)
+
+        if(!foundLink.password)
+            return;
+
+        if(foundLink.password !== password)
+            throw new BadRequestException();
     }
 }
