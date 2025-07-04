@@ -28,6 +28,15 @@ export class MaskedLinkController {
 
         this.maskedLinkService.validateAccess(link, password);
 
+        this.maskedLinkService.registerRedirect(urlId);
+
         return res.redirect(link.target);
+    }
+
+    @Get(':id/stats')
+    getStatistics(
+        @Param('id') urlId: string
+    ) {
+        return this.maskedLinkService.getStats(urlId);
     }
 }

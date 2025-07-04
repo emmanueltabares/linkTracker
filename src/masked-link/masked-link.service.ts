@@ -13,10 +13,6 @@ export class MaskedLinkService {
         
         const { url, password, expirationDate } = createLinkDto;
         
-        const urlExistence = this.getLinkByUrl(url);
-        if(urlExistence)
-            return "URL already exists"
-
         const randomId = this.generateRandomId();
         const maskedUrl = this.maskUrl(randomId);
 
@@ -60,10 +56,6 @@ export class MaskedLinkService {
         return link;
     }
 
-    getLinkByUrl(url: string) {
-        return links.find(({ target }) => target === url)
-    }
-
     generateRandomId(): string {
         return nanoid(6);
     }
@@ -83,5 +75,15 @@ export class MaskedLinkService {
 
         if(foundLink.password !== password)
             throw new BadRequestException();
+    }
+
+    registerRedirect(urlId: string) {
+        const link = this.getLinkByUrlId(urlId)
+        link.redirectCount++
+    }
+
+    getStats(urlId: string) {
+        const link = this.getLinkByUrlId(urlId)
+        return link.redirectCount;
     }
 }
