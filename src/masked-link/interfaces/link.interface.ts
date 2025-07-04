@@ -3,7 +3,7 @@ export interface Link {
     target: string;
     link: string;
     password?: string;
-    expirationDate?: string;
+    expirationDate?: Date;
     redirectCount: number;
     valid: boolean;
 }

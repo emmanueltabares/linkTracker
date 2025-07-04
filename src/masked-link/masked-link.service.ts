@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { CreateLinkDto } from "./DTOs/create-link.dto";
 import { Link } from "./interfaces/link.interface";
 
@@ -12,7 +12,11 @@ export class MaskedLinkService {
     createLink(createLinkDto: CreateLinkDto): any {
         
         const { url, password, expirationDate } = createLinkDto;
-        
+
+        const date = expirationDate ? new Date(expirationDate) : undefined;
+        if (date && date.getTime() < new Date().getTime())
+            throw new BadRequestException("The expiration date must be greater than the current date")
+
         const randomId = this.generateRandomId();
         const maskedUrl = this.maskUrl(randomId);
 
@@ -21,7 +25,7 @@ export class MaskedLinkService {
             target: url,
             link: maskedUrl,
             password,
-            expirationDate,
+            expirationDate: date, 
             redirectCount: 0,
             valid: true
         }
@@ -45,13 +49,14 @@ export class MaskedLinkService {
         link.valid = false;
         link.expirationDate = undefined;
 
-        return "The link has been invalidated"
+        return link;
     }
 
     getLinkByUrlId(urlId: string): Link {
         const link = links.find(({ id }) => id === urlId)
+
         if(!link?.valid)
-            throw new BadRequestException("The link not exist or not valid")
+            throw new NotFoundException("The link does not exist or is invalid")
 
         return link;
     }
@@ -75,6 +80,9 @@ export class MaskedLinkService {
 
         if(foundLink.password !== password)
             throw new BadRequestException();
+
+        if(new Date() > foundLink.expirationDate)
+            throw new NotFoundException("The link has been expired");
     }
 
     registerRedirect(urlId: string) {
