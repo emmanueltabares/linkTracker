@@ -10,6 +10,8 @@ export class CreateLinkDto {
     password?: string;
 
     @IsOptional()
-    @IsDateString()
+    @IsDateString({}, {
+        message: "ExpirationDate must be a valid ISO 8601 date string (ej: 2025-07-01T12:00:00)"
+    })
     expirationDate?: string;
 }

@@ -19,6 +19,7 @@ export class MaskedLinkController {
                 data: createdLink,
             }            
         } catch (error: any) {
+
             return {
                 success: false,
                 message: error.message ?? 'The link cannot be created',
@@ -40,13 +41,13 @@ export class MaskedLinkController {
                 data: invalidateLink
             }
         } catch (error: any) {
+
             return {
                 success: false,
                 message: error.message ?? 'The link cannot be invalidated',
                 error: {
                     statusCode: error.status ?? 500,
                     timestamp: new Date(),
-                    path: `/l/${urlId}`,
                 },
             }
         }
@@ -59,21 +60,19 @@ export class MaskedLinkController {
         @Res() res: Response
     ) {
         try {
-            const link = this.maskedLinkService.getLinkByUrlId(urlId);
-    
+            const link = this.maskedLinkService.getLink(urlId);
             this.maskedLinkService.validateAccess(link, password);
-    
             this.maskedLinkService.registerRedirect(urlId);
     
             return res.redirect(link.target);
         } catch (error: any) {
+
             return res.status(error.status).json({
                 success: false,
                 message: error.message ?? 'Cannot redirect to Link',
                 error: {
                     statusCode: error.status ?? 500,
                     timestamp: new Date(),
-                    path: `/l/${urlId}`,
                 },
             });
         }
@@ -92,13 +91,13 @@ export class MaskedLinkController {
                 }
             }
         } catch (error: any) {
+
             return {
                 success: false,
                 message: error.message ?? 'Statistics cannot be obtained',
                 error: {
                     statusCode: error.status ?? 500,
                     timestamp: new Date(),
-                    path: `/l/${urlId}`,
                 },
             }
         }

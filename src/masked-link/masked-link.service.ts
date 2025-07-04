@@ -3,11 +3,14 @@ import { CreateLinkDto } from "./DTOs/create-link.dto";
 import { Link } from "./interfaces/link.interface";
 
 import { nanoid } from 'nanoid';
+import { ConfigService } from "@nestjs/config";
 
 const links: Link[] = [];
 
 @Injectable()
 export class MaskedLinkService {
+
+    constructor(private configService: ConfigService) {}
 
     createLink(createLinkDto: CreateLinkDto): any {
         
@@ -44,7 +47,9 @@ export class MaskedLinkService {
     }
 
     invalidateLink(urlId: string) {
-        const link = this.getLinkByUrlId(urlId)
+        const link = this.getLink(urlId);
+
+        this.checkIsValidLink(link);
 
         link.valid = false;
         link.expirationDate = undefined;
@@ -52,11 +57,11 @@ export class MaskedLinkService {
         return link;
     }
 
-    getLinkByUrlId(urlId: string): Link {
-        const link = links.find(({ id }) => id === urlId)
+    getLink(urlId: string): Link {
+        const link = links.find(({ id }) => id === urlId);
 
-        if(!link?.valid)
-            throw new NotFoundException("The link does not exist or is invalid")
+        if(!link)
+            throw new NotFoundException("The link does not exist");
 
         return link;
     }
@@ -66,14 +71,16 @@ export class MaskedLinkService {
     }
 
     maskUrl(urlId: string): string {
-        const maskedHost = "localhost"; // sacar de process.env
-        const maskedPort = 3000; // Sacar de process.env;
-        
+        const maskedHost = this.configService.get('HOST') ?? 'localhost';
+        const maskedPort = this.configService.get('PORT') ?? 3000;
+
         return `http://${maskedHost}:${maskedPort}/l/${urlId}`
     }
 
     validateAccess(link: Link, password?: string) {
-        const foundLink = this.getLinkByUrlId(link.id)
+        const foundLink = this.getLink(link.id);
+
+        this.checkIsValidLink(link);
 
         if(!foundLink.password)
             return;
@@ -85,13 +92,18 @@ export class MaskedLinkService {
             throw new NotFoundException("The link has been expired");
     }
 
+    checkIsValidLink(link: Link) {
+        if(!link.valid)
+            throw new NotFoundException("The link does not valid");
+    }
+
     registerRedirect(urlId: string) {
-        const link = this.getLinkByUrlId(urlId)
-        link.redirectCount++
+        const link = this.getLink(urlId);
+        link.redirectCount++;
     }
 
     getStats(urlId: string) {
-        const link = this.getLinkByUrlId(urlId)
+        const link = this.getLink(urlId);
         return link.redirectCount;
     }
 }
